@@ -1,0 +1,162 @@
+#!/bin/bash
+# This script's framework was created using makescript 
+# version v0.11.0, dated 2018-11-12
+# Makescript and its accompanying scripts are copyrighted
+# by Aetesaki (c) 2018
+# 
+# msedit is part of the makescript suite by Aetesaki
+# (c) 2018 Aetesaki
+#
+# ##################################################
+# HISTORY:
+# ##################################################
+#
+# * 2018-11-12 - v0.0.0  - First Creation
+# * 2018-11-12 - v0.1.0  - imported script from makescript and editscript
+# * 2018-11-12 - v0.1.1  - finding error launching nano
+# * 2018-11-12 - v0.2.0  - moved to .support
+# * 2018-11-12 - v1.0.0  - Release version
+#
+# ##################################################
+# Initializing constants and variables
+# ##################################################
+# Setting constants
+version="v1.0.0"            # Sets version variable
+lastEdited="2018-11-12"     # Sets last edited variable
+# Decleare variables
+# Declare all variables to be used in the script 
+declare editor                # option variable
+declare scriptNamePath        # name and path of the script
+# ##################################################
+# short help function
+# ##################################################
+shorthelp() {
+    # Edit as required
+    echo "Usage: msedit [-e editor] script
+       msedit --help
+       msedit --version"
+}
+# ##################################################
+# no arguments gives short help
+# ##################################################
+if [ "$#" == "0" ]; then
+    shorthelp
+    exit 1
+fi 
+# ##################################################
+# -- help
+# ##################################################
+if [ "$1" == "--help" ]; then
+    shorthelp
+    # Write options and explanations
+    echo "
+   -e, --editor=editor    Launch the file in selected editor.
+                          Selected editor must be in \$PATH.
+   --help                 Displays this text and exit.
+   --version              Displays the version of the script and exit."
+    # Write information on arguments afterwards
+    # Write examples as required
+    exit 0
+fi 
+# ##################################################
+# -- version
+# ##################################################
+if [ "$1" == "--version" ]; then
+    echo "msedit ${version}, dated ${lastEdited} 
+Part of the makescript suite by Aetesaki. INITIAL RELEASE VERSION
+(c) 2018 aetesaki"
+    echo "
+Option iteratation section lifted from
+https://natelandau.com/boilerplate-shell-script-template/"
+    exit 0
+fi 
+# ##################################################
+# Options
+#
+# Iterate over options breaking -ab into -a -b when 
+# needed and --foo=bar into --foo bar. Lifted from 
+# https://natelandau.com/boilerplate-shell-script-template/
+# ##################################################
+optstring=h
+while (($#)); do
+  case $1 in
+    # If option is of type -ab
+    -[!-]?*)
+      # Loop over each character starting with the second
+      for ((i=1; i < ${#1}; i++)); do
+        c=${1:i:1}
+
+        # Add current char to options
+        options+=("-$c")
+
+        # If option takes a required argument, and it's not the last char make
+        # the rest of the string its argument
+        if [[ $optstring = *"$c:"* && ${1:i+1} ]]; then
+          options+=("+${1:i+1}")
+          break
+        fi
+      done
+      ;;
+
+    # If option is of type --foo=bar
+    --?*=*) options+=("${1%%=*}" "${1#*=}") ;;
+    # add --endopts for --
+    --) options+=(--endopts) ;;
+    # Otherwise, nothing special
+    *) options+=("$1") ;;
+  esac
+  shift
+done
+set -- "${options[@]}"
+unset options
+# Read the options and set stuff
+while [[ $1 = -?* ]]; do
+  case $1 in
+    # insert cases 
+    # use shift; to catch arguments in $1
+    -e|--editor) shift; editor=${1} ;;
+    *) echo "ERROR: option $1 is not valid."; exit 1;; 
+  esac
+  shift
+done
+# Store the remaining part as arguments.
+unset args
+args+=("$@")
+# No arguments gives error
+if [ "$args" == "" ]; then
+    echo "ERROR: No arguments..."
+    exit 1
+fi 
+
+# ##################################################
+# Main section
+# ##################################################
+# Get the script and path from arguments
+scriptNamePath=$1
+# Launch an editor depending on current environment
+# ##################################################
+# if editor is provided
+if [ ! "$editor" == "" ]; then
+    # execute that editor
+    # if editor is nano or pico
+    if [ "$editor" == "nano" -o "$editor" == "pico" ]; then
+        # hog the prompt
+        exec nano $scriptNamePath
+    else
+        # don't hog the prompt
+        exec $editor $scriptNamePath &
+    fi
+else
+    # if not checking terminal variable $TERM
+    if [ "$TERM" == "xterm" ]; then 
+        # if in an xterm terminal, launch xed, gedit or kate
+        exec xed $scriptNamePath 2>/dev/null &
+        exec gedit $scriptNamePath 2>/dev/null &
+        exec kate $scriptNamePath 2>/dev/null &
+    else
+        # if in an linux terminal, launch nano or vi
+        exec nano $scriptNamePath 2>/dev/null 
+        exec vim $scriptNamePath 2>/dev/null 
+        exec vi $scriptNamePath 2>/dev/null 
+    fi
+fi
