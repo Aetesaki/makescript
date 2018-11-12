@@ -1,0 +1,9 @@
+# ##################################################
+# short help function
+# ##################################################
+shorthelp() {
+    # Edit as required
+    echo "Usage: {scriptName} [-options] arguments
+       {scriptName} --help
+       {scriptName} --version"
+}
