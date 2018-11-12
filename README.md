@@ -9,3 +9,5 @@ Files (preview):
 * msinstall -- Installs the scripts onto the system. Note that if the suite is installed onto the system, only root can edit the provided script files. Installing the scripts onto the system requires root or sudo access.
             
 All provided scripts have a --help and a --version option, and all scripts created using makescript have a --version option.
+
+Option iteratation section shamelessly lifted from https://natelandau.com/boilerplate-shell-script-template/
