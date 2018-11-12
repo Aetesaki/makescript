@@ -7,11 +7,13 @@
 # HISTORY:
 # ##################################################
 #
+# * {initdate} - v0.0.0  - First Creation
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
 version="v0.0.0"            # Sets version variable
+lastEdited="{initdate}"     # Sets last edited variable" $scriptNamePath
 # Declaring variables
 # Declare all variables to be used in the script 
