@@ -1,0 +1,17 @@
+# This script's framework was created using makescript 
+# Makescript and its accompanying scripts are copyrighted
+# by Aetesaki (c) 2018
+# 
+#
+# ##################################################
+# HISTORY:
+# ##################################################
+#
+#
+# ##################################################
+# Initializing constants and variables
+# ##################################################
+# Setting constants
+version="v0.0.0"            # Sets version variable
+# Declaring variables
+# Declare all variables to be used in the script 
