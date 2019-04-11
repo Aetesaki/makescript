@@ -5,7 +5,6 @@ The scripts will default to making and editing scripts in $HOME/bin, and will ke
 #Files (preview):
 * makescript -- Creates a news script using provided options, and launches an editor.
 * editscript -- Makes a copy of a previously created script, increases the version number of the script, sets the last edited date in the script, and launches an editor.
-* importscript -- Imports a script into a makescript framework.
 
 To install, download, open a terminal, and type
 ```bash
