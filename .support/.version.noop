@@ -1,3 +1,4 @@
-(c) {inityear} {USER}"
+(c) {inityear} {USER}
+EOF
     exit 0
 fi

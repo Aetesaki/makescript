@@ -16,13 +16,14 @@
 # * 2018-11-12 - v0.1.1  - finding error launching nano
 # * 2018-11-12 - v0.2.0  - moved to .support
 # * 2018-11-12 - v1.0.0  - Release version
+# * 2019-04-11 - v1.1.0  - changing help text from echo to here document
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.0"            # Sets version variable
-lastEdited="2018-11-12"     # Sets last edited variable
+version="v1.1.0"            # Sets version variable
+lastEdited="2019-04-11"     # Sets last edited variable
 # Decleare variables
 # Declare all variables to be used in the script 
 declare editor                # option variable
@@ -32,9 +33,11 @@ declare scriptNamePath        # name and path of the script
 # ##################################################
 shorthelp() {
     # Edit as required
-    echo "Usage: msedit [-e editor] script
+    cat << EOF
+Usage: msedit [-e editor] script
        msedit --help
-       msedit --version"
+       msedit --version
+EOF
 }
 # ##################################################
 # no arguments gives short help
@@ -49,11 +52,12 @@ fi
 if [ "$1" == "--help" ]; then
     shorthelp
     # Write options and explanations
-    echo "
+    cat << EOF
    -e, --editor=editor    Launch the file in selected editor.
                           Selected editor must be in \$PATH.
    --help                 Displays this text and exit.
-   --version              Displays the version of the script and exit."
+   --version              Displays the version of the script and exit.
+EOF
     # Write information on arguments afterwards
     # Write examples as required
     exit 0
@@ -62,12 +66,14 @@ fi
 # -- version
 # ##################################################
 if [ "$1" == "--version" ]; then
-    echo "msedit ${version}, dated ${lastEdited} 
+    cat << EOF
+msedit ${version}, dated ${lastEdited} 
 Part of the makescript suite by Aetesaki. INITIAL RELEASE VERSION
-(c) 2018 aetesaki"
-    echo "
+(c) 2018 aetesaki
+
 Option iteratation section lifted from
-https://natelandau.com/boilerplate-shell-script-template/"
+https://natelandau.com/boilerplate-shell-script-template/
+EOF
     exit 0
 fi 
 # ##################################################
