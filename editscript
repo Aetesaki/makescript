@@ -1,0 +1,343 @@
+#!/bin/bash
+# This script's framework was created using makescript 
+# version v0.9.1, dated 2018-11-11
+#
+# Editscript is part of the makescript suite by Aetesaki
+# (c) 2018 Aetesaki
+#
+# ##################################################
+# HISTORY:
+# ##################################################
+#
+# * 2018-11-10 - v0.0.0  - First Creation
+# * 2018-11-11 - v0.0.1  - continuing
+# * 2018-11-11 - v0.1.0  - done
+# * 2018-11-11 - v0.1.1  - removed editor hogging the prompt
+# * 2018-11-11 - v0.1.2  - reinserted framework heading
+# * 2018-11-11 - v0.1.3  - added suite in version
+# * 2018-11-11 - v0.1.4  - added actual options in short help
+# * 2018-11-11 - v0.1.5  - corrected reason in help and short help
+# * 2018-11-11 - v0.2.0  - switched to multiline echo
+# * 2018-11-11 - v0.3.0  - moved launching editor section to msedit
+# * 2018-11-12 - v0.4.0  - added a noedit option
+# * 2018-11-12 - v0.5.0  - msedit moved to .support
+# * 2018-11-12 - v0.5.1  - equalize launch section with that of makescript
+# * 2019-04-11 - v0.6.0  - changing help text from echo to here document
+# * 2019-04-11 - v0.6.1  - correcting error updating date in version list
+# * 2019-06-01 - v1.0.0  - Initial release
+#
+# ##################################################
+# Initializing constants and variables
+# ##################################################
+# Setting constants
+version="v1.0.0"            # Sets version variable
+lastEdited="2019-06-01"     # Sets last edited variable
+# Declaring variables
+# Declare all variables to be used in the script 
+declare editor minor major here path  # option varables
+declare noedit
+declare scriptName                    # Name of the script
+declare scriptPath                    # Full path to the script
+declare scriptNamePath                # Full path and name
+declare scriptVersion                 # Script version in script
+declare scriptMajor scriptMinor scriptBuild 
+declare scriptDate                    # lastEdited date in script
+declare editReason                    # Reason for edit
+declare backupVersion                 # Version without dots
+declare backupPath                    # Path to backup directory
+declare backupExt                     # Agregated backup extention of script
+declare destination                   # Full path and filename of backup
+declare myPath=$(dirname $0)                  # Full path of makescript
+declare mySupport                             # Full path to .support directory
+declare mseditArgs=""                         # Arguments for msedit
+# Set mySupport path according to myPath
+# if myPath is /bin
+if [ $myPath == "/bin" ]; then
+    # set mySupport to /opt/makescript/.support
+    mySupport=/opt/makescript/.support
+else
+    # set mySupport to myPath/.support
+    mySupport=$myPath/.support
+fi
+# ##################################################
+# short help function
+# ##################################################
+shorthelp() {
+    # Edit as required
+cat << EOF
+Usage: editscript [-lmpv] [-e editor] script [reason...]
+       editscript --help
+       editscript --version
+EOF
+}
+# ##################################################
+# no arguments gives short help
+# ##################################################
+if [ "$#" == "0" ]; then
+    shorthelp
+    exit 1
+fi 
+# ##################################################
+# -- help
+# ##################################################
+if [ "$1" == "--help" ]; then
+    shorthelp
+    cat << EOF
+Makes a backup of the script, increases version number, updates the script's
+history list, and launches an editor.
+If the script is in a bin directory, the backup will be made in the 
+subdirectory bak, which will be created if required.
+
+  -e, --editor=editor  Launch the file in selected editor.
+                       Selected editor must be in \$PATH.
+  -l, --local          Script is found in local directory.
+                       If this is not set, editscript will assume script is 
+                       found in \$HOME/bin.
+  -m, --minor          Increase minor version number,
+      --noedit         Do not launch an editor
+  -p, --path           script includes the path.
+                       Overrides the -l, --local option.
+  -v, --major          Increases major version number.
+                       Overrides the -m, --minor option.
+  --help               Displays this text and exit.
+  --version            Displays the version of the script and exit.
+
+  script               Do not include a path as part of the script unless
+                       the -p, --path option is used.
+  [reason...]          Optional, but will be included in the history, if
+                       provided. Quote marks not required.
+EOF
+    exit 0
+fi 
+# ##################################################
+# -- version
+# ##################################################
+if [ "$1" == "--version" ]; then
+    cat << EOF
+editscript ${version}, dated ${lastEdited}
+Part of the makescript suite by Aetesaki. INITIAL RELEASE VERSION
+(c) 2018 aetesaki
+
+Option iteratation section lifted from
+https://natelandau.com/boilerplate-shell-script-template/
+EOF
+    exit 0
+fi 
+# ##################################################
+# Options
+#
+# Iterate over options breaking -ab into -a -b when 
+# needed and --foo=bar into --foo bar. Lifted from 
+# https://natelandau.com/boilerplate-shell-script-template/
+# ##################################################
+optstring=h
+while (($#)); do
+  case $1 in
+    # If option is of type -ab
+    -[!-]?*)
+      # Loop over each character starting with the second
+      for ((i=1; i < ${#1}; i++)); do
+        c=${1:i:1}
+
+        # Add current char to options
+        options+=("-$c")
+
+        # If option takes a required argument, and it's not the last char make
+        # the rest of the string its argument
+        if [[ $optstring = *"$c:"* && ${1:i+1} ]]; then
+          options+=("+${1:i+1}")
+          break
+        fi
+      done
+      ;;
+
+    # If option is of type --foo=bar
+    --?*=*) options+=("${1%%=*}" "${1#*=}") ;;
+    # add --endopts for --
+    --) options+=(--endopts) ;;
+    # Otherwise, nothing special
+    *) options+=("$1") ;;
+  esac
+  shift
+done
+set -- "${options[@]}"
+unset options
+# Read the options and set stuff
+while [[ $1 = -?* ]]; do
+  case $1 in
+    # insert cases 
+    # use shift; to catch arguments in $1
+    -e|--editor) shift; editor=${1} ;;
+    -l|--local) here=1 ;;
+    -m|--minor) minor=1 ;;
+    --noedit) noedit=1 ;;
+    -p|--path)  path=1 ;;
+    -v|--major) major=1 ;;
+    *) echo "ERROR: option $1 is not valid."; exit 1;; 
+  esac
+  shift
+done
+# Store the remaining part as arguments.
+unset args
+args+=("$@")
+# If there are arguments left
+if [ "$args" == "" ]; then
+    # display an error
+    echo "ERROR: No arguments..."
+    # and exit
+    exit 1
+fi 
+
+# ##################################################
+# Main section
+# ##################################################
+# set scriptName and reasons for edit
+scriptName=$1
+shift
+editReason=$@
+
+# Set paths
+# ##################################################
+# If filepath is included
+if [ "$path" == "1" ]; then
+    # extract scriptPath from scriptName
+    scriptPath=$(dirname $scriptName)
+    # then remove scriptPath from scriptName
+    scriptName=$(basename $scriptName)
+else
+    # If the file is local
+    if [ "$here" == "1" ]; then
+        # set scriptPath to current path
+        scriptPath=$(pwd)
+    else
+        # set scriptPath to $HOME/bin
+        scriptPath=$HOME/bin
+    fi
+fi
+# set up backupPath
+backupPath=$scriptPath
+# check if backupPath is a bin directory
+if [ $(basename "$backupPath") == "bin" ]; then
+    # add /bak to backupPath
+    backupPath+=/bak
+    # and create backup directory if it doesn't exist
+    if [ ! -d $backupPath ]; then
+        mkdir $backupPath
+    fi
+fi
+# Set the full path name
+scriptNamePath=$scriptPath/$scriptName
+
+# Check if editscript can work with the script
+# ##################################################
+# pull the makescript intro from the script
+x=$( cat $scriptNamePath | grep -ni makescript | head -n1 | cut -d":" -f1 )
+# check if the intro is in line 2
+if [ ! "$x" == "2" ]; then
+    # if not, display an error message
+    echo "ERROR: editscript cannot work with this script.
+editscript can only work with makescript scripts."
+    # and exit
+    exit 1
+fi
+
+# Pull all version data from script
+# ##################################################
+# pull scriptVersion from the script
+scriptVersion=$( cat $scriptNamePath | grep -i version= | head -n1 | cut -d"\"" -f2 )
+# split the version data into major, minor, and build
+scriptMajor=$( echo ${scriptVersion//v} | cut -d"." -f1 )
+scriptMinor=$( echo ${scriptVersion//v} | cut -d"." -f2 )
+scriptBuild=$( echo ${scriptVersion//v} | cut -d"." -f3 )
+# pull scriptDate from the script
+scriptDate=$( cat $scriptNamePath | grep -i lastEdited= | head -n1 | cut -d"\"" -f2 )
+
+# Backup the script
+# ##################################################
+# remove the dots in the version number
+backupVersion=${scriptVersion//.}
+# set the backup file extension
+backupExt=$scriptDate.$backupVersion
+# Set the backup destination
+destination=$backupPath/$scriptName.$backupExt
+# Make a backup of the script
+cp -b $scriptNamePath $destination
+
+# Increase version number as requested (increases build as default)
+# ##################################################
+# if major edit
+if [ "$major" == "1" ]; then
+    # increase major version
+    scriptMajor=$( expr $scriptMajor + 1 )
+    # and reset minor and build
+    scriptMinor=0
+    scriptBuild=0
+else
+    # if major not set, then if minor edit
+    if [ "$minor" == "1" ]; then
+        # increase minor
+        scriptMinor=$( expr $scriptMinor + 1 )
+        # and reset build
+        scriptBuild=0
+    else
+        # just increase build
+        scriptBuild=$( expr $scriptBuild + 1 )
+    fi
+fi
+# recreate scriptVersion using new build version
+scriptVersion="v${scriptMajor}.${scriptMinor}.${scriptBuild}"
+
+# Replace file's current date with current date
+# ##################################################
+# if scriptDate is different from current date
+if [ ! $scriptDate == $(date -I) ]; then
+    # set scriptDate to current date
+    scriptDate=$( date -I )
+    # set up new lastEdited line
+    x="lastEdited=\"${scriptDate}\"     # Sets last edited variable"
+    # locate the lastEdited line
+    i=$( cat $scriptNamePath | grep -ni lastEdited= | head -n1 | cut -d":" -f1 )
+    # delete the existing line
+    sed -i "${i}d" $scriptNamePath
+    # and insert the new line
+    sed -i "${i}i${x}" $scriptNamePath
+fi
+
+# Insert new version number in History list
+# ##################################################
+# locate line number for end of History list
+i=$( expr $( cat $scriptNamePath | grep -ni initializing | head -n1 | cut -d":" -f1 ) - 2 )
+# set up new History record
+x="# * ${scriptDate} - ${scriptVersion}  - "
+# and insert reason if supplied
+if [ ! "$editReason" == "" ]; then
+    x+=$editReason
+fi
+# finally issue sed command
+sed -i "${i}i${x}" $scriptNamePath
+
+# Replace file's version number with new version number
+# ##################################################
+# set up new version line
+x="version=\"${scriptVersion}\"            # Sets version variable"
+# locate the version line
+i=$( cat $scriptNamePath | grep -ni version= | head -n1 | cut -d":" -f1 )
+# delete the existing line
+sed -i "${i}d" $scriptNamePath
+# and insert the new line
+sed -i "${i}i${x}" $scriptNamePath
+
+# Launch editor
+# ##################################################
+# unless noedit is set
+if [ ! "$noedit" == "1" ]; then
+    # Set up mseditArgs
+    # if editor is provided
+    if [ ! "$editor" == "" ]; then
+        # add that editor to mseditArgs
+        mseditArgs="--editor=$editor "
+    fi
+    mseditArgs=$mseditArgs$scriptNamePath
+
+    exec $mySupport/msedit $mseditArgs
+fi

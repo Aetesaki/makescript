@@ -1,0 +1,331 @@
+#!/bin/bash
+# Makescript is part of the makescript suite by Aetesaki
+# (c) 2018 Aetesaki
+#
+# Partially based on scriptTemplate.sh which can be found at
+# https://natelandau.com/boilerplate-shell-script-template/
+#
+# ##################################################
+# HISTORY:
+# ##################################################
+#
+# * 2018-10-18 - v0.1.0  - First Creation
+# * 2018-10-20 - v0.2.0  - Creating framework
+# * 2018-10-20 - v0.3.0  - Adding a force option
+# * 2018-10-20 - v0.4.0  - Moving short help to a function
+# * 2018-11-10 - v0.5.0  - Opening script for editing
+# * 2018-11-10 - v0.6.0  - Keep --help and --version
+# * 2018-11-10 - v0.6.1  - Updated header to include copyright of makescript
+# * 2018-11-10 - v0.6.2  - added an error message if an incorrect option is given
+# * 2018-11-11 - v0.7.0  - Added defaults to $HOME/bin
+# * 2018-11-11 - v0.7.1  - removed editor hogging the prompt
+# * 2018-11-11 - v0.8.0  - added local option
+# * 2018-11-11 - v0.9.0  - added path option
+# * 2018-11-11 - v0.9.1  - added more comments
+# * 2018-11-11 - v0.9.2  - added suite in version
+# * 2018-11-11 - v0.9.3  - changed file to script in short help
+# * 2018-11-11 - v0.10.0  - switched to multiline echo
+# * 2018-11-11 - v0.11.0  - make an all option
+# * 2018-11-12 - v0.12.0  - moved launching editor section to msedit
+# * 2018-11-12 - v0.13.0  - added noedit option and msedit moved to .support
+# * 2018-11-12 - v0.14.0  - moving framework to .support
+# * 2018-11-12 - v0.14.1  - moving header to .support
+# * 2018-11-12 - v0.14.2  - moving short help to .support
+# * 2018-11-12 - v0.14.3  - move header placeholders to .support
+# * 2018-11-12 - v0.14.4  - move empty section to .support
+#                           and minor edit of editor launcher section  
+# * 2018-11-12 - v0.14.5  - move initdate and inityear to declare section
+# * 2018-11-12 - v0.14.6  - move help section to .support
+# * 2018-11-12 - v0.14.7  - move version section to .support
+# * 2018-11-12 - v0.14.8  - move options section to .support
+# * 2018-11-18 - v0.14.9  - move main section to .support
+# * 2019-04-11 - v0.15.0  - changing help text from echo to here document
+# * 2019-06-01 - v1.0.0  - Initial release
+#
+# ##################################################
+# Initializing constants and variables
+# ##################################################
+# Setting constants
+version="v1.0.0"            # Sets version variable
+lastEdited="2019-06-01"     # Sets last edited variable
+# Declaring variables
+# Declare all variables to be used in the script 
+declare editor empty force help here noedit   # option variables
+declare options path shell                    # option variables
+declare scriptName scriptPath scriptNamePath  # script name variables
+declare initdate=$( date -I )                 # script's initial date
+declare inityear=$( date -I | cut -d"-" -f1 ) # script's initial year
+declare myPath=$(dirname $0)                  # Full path of makescript
+declare mySupport                             # Full path to .support directory
+declare mseditArgs=""                         # Arguments for msedit
+# Set mySupport path according to myPath
+# if myPath is /bin
+if [ $myPath == "/bin" ]; then
+    # set mySupport to /opt/makescript/.support
+    mySupport=/opt/makescript/.support
+else
+    # set mySupport to myPath/.support
+    mySupport=$myPath/.support
+fi
+# ##################################################
+# short help function
+# ##################################################
+shorthelp() {
+cat << EOF
+Usage: makescript [-afhlmop] [-e editor] [-s shell] script
+       makescript --help
+       makescript --version
+EOF
+}
+# ##################################################
+# no arguments displays short help
+# ##################################################
+if [ "$#" == "0" ]; then
+    shorthelp
+    exit 1
+fi 
+# ##################################################
+# -- help
+# ##################################################
+if [ "$1" == "--help" ]; then
+    shorthelp
+cat << EOF
+Creates a framework for a shell script and launches an editor.
+As default the script is created in \$HOME/bin.
+
+   -a, --all              Adds a framework for help, options and empty
+                          argument list.
+   -e, --editor=editor    Launches the script framework in the selected editor.
+                          Selected editor must be in PATH.
+   -f, --force            Ignore errors
+   -h                     Adds a framework for a help option..
+   -l, --local            Create the script in current directory.
+   -m                     Adds a framework for empty argument list.
+       --noedit           Do not launch an editor
+   -o                     Adds a framework for options.
+   -p, --path             script includes the path to the script.
+                          The path will be created if it doesn't exist.
+                          Overrides the -l, --local option.
+   -s, --shell=shell      Create the script for the selected shell
+                          The /bin/ path will be added by the script.
+                          Default shell is bash.
+   --help                 Displays this text and exit.
+   --version              Displays the version of the script and exit.
+EOF
+    exit 0
+fi 
+# ##################################################
+# -- version
+# ##################################################
+if [ "$1" == "--version" ]; then
+    cat << EOF
+makescript ${version}, dated ${lastEdited}
+Part of the makescript suite by Aetesaki. INITIAL RELEASE VERSION
+(c) 2018 Aetesaki
+ 
+Option iteratation section lifted from
+https://natelandau.com/boilerplate-shell-script-template/
+EOF
+    exit 0
+fi 
+# ##################################################
+# Options
+#
+# Iterate over options breaking -ab into -a -b when 
+# needed and --foo=bar into --foo bar. Lifted from 
+# https://natelandau.com/boilerplate-shell-script-template/
+# ##################################################
+optstring=h
+while (($#)); do
+  case $1 in
+    # If option is of type -ab
+    -[!-]?*)
+      # Loop over each character starting with the second
+      for ((i=1; i < ${#1}; i++)); do
+        c=${1:i:1}
+
+        # Add current char to options
+        options+=("-$c")
+
+        # If option takes a required argument, and it's not the last char make
+        # the rest of the string its argument
+        if [[ $optstring = *"$c:"* && ${1:i+1} ]]; then
+          options+=("${1:i+1}")
+          break
+        fi
+      done
+      ;;
+
+    # If option is of type --foo=bar
+    --?*=*) options+=("${1%%=*}" "${1#*=}") ;;
+    # add --endopts for --
+    --) options+=(--endopts) ;;
+    # Otherwise, nothing special
+    *) options+=("$1") ;;
+  esac
+  shift
+done
+set -- "${options[@]}"
+unset options
+# Read the options and set stuff
+while [[ $1 = -?* ]]; do
+  case $1 in
+    -a|--all) help=1; empty=1; options=1 ;;
+    -e|--editor) shift; editor=${1} ;;
+    -f|--force) force=1 ;;
+    -h) help=1 ;;
+    -l|--local) here=1 ;;
+    -m) empty=1 ;;
+    -o) options=1 ;;
+    -p|--path) path=1 ;;
+    -s|--shell) shift; shell=${1} ;; 
+    *) echo "ERROR: option $1 is not valid."; exit 1;; 
+  esac
+  shift
+done
+# Store the remaining part as arguments.
+unset args
+args+=("$@")
+# No arguments gives error
+if [ "$args" == "" ]; then
+    echo "ERROR: No script name provided..."
+    exit 1
+fi 
+
+# ##################################################
+# Main section
+# ##################################################
+# set scriptName to first remaining argument
+scriptName=$1
+
+# Set paths
+# ##################################################
+# If filepath is included
+if [ "$path" == "1" ]; then
+    # extract scriptPath from scriptName
+    scriptPath=$(dirname $scriptName)
+    # then remove scriptPath from scriptName
+    scriptName=$(basename $scriptName)
+else
+    # If the file is local
+    if [ "$here" == "1" ]; then
+        # set scriptPath to current path
+        scriptPath=$(pwd)
+    else
+        # set scriptPath to $HOME/bin
+        scriptPath=$HOME/bin
+    fi
+fi
+# create directory if not found
+if [ ! -d $scriptPath ]; then
+    mkdir -p $scriptPath
+fi
+# set full path
+scriptNamePath=$scriptPath/$scriptName
+
+# Create the framework
+# ##################################################
+# Insert shebang
+# if no shell is selected
+if [ "$shell" == "" ]; then
+    # set shebang to bash
+    echo "#!/bin/bash" > $scriptNamePath
+# if shell is selected and it exists or is forced
+elif [[ -x /bin/${shell} || "$force" == "1" ]]; then
+    # set shebang to selected shell
+    echo "#!/bin/${shell}" > $scriptNamePath
+else
+    # display an error message
+    echo "ERROR: Selected shell is not available"
+    # and exit
+    exit 1    
+fi
+
+# append header section from file
+cat $mySupport/.header >> $scriptNamePath
+# insert makescript version
+sed -i "3i# version ${version}, dated ${lastEdited}" $scriptNamePath
+
+# Short help function
+# if emtpy option or help option is set
+if [[ "$empty" == "1" || "$help" == "1" ]]; then
+    # append short help function section from file
+    cat $mySupport/.shorthelp >> $scriptNamePath
+    # if help option is not set
+    if [[ ! "$help" == "1" ]]; then
+        # delete script's help opion from short help
+        sed -i '29d' $scriptNamePath
+    fi
+fi
+
+# Empty argument check
+# ##################################################
+# if empty option is set
+if [ "$empty" == "1" ]; then
+    # append empty argument check section from file
+    cat $mySupport/.empty >> $scriptNamePath
+fi
+
+# help section
+# ##################################################
+# if help option is set
+if [ "$help" == "1" ]; then
+    # append help section from file
+    cat $mySupport/.help >> $scriptNamePath
+fi
+
+# Version section
+# ##################################################
+# append version section from file
+cat $mySupport/.version >> $scriptNamePath
+# if options option is set
+if [ "$options" == "1" ]; then
+    cat $mySupport/.version.op >> $scriptNamePath
+else
+    cat $mySupport/.version.noop >> $scriptNamePath
+fi 
+
+# Option iteration section
+# ##################################################
+# if options option is set
+if [ "$options" == "1" ]; then
+    # insert options section from file
+    cat $mySupport/.options >> $scriptNamePath
+fi
+
+# Main section
+# ##################################################
+# insert main section from file
+cat $mySupport/.main >> $scriptNamePath
+
+# Replace all placeholders
+# ##################################################
+# replace all {initdate} with $initdate
+sed -i "s/{initdate}/$initdate/g" $scriptNamePath
+# replace all {inityear} with $inityear
+sed -i "s/{inityear}/$inityear/g" $scriptNamePath
+# replace all {scriptName} with $scriptName
+sed -i "s/{scriptName}/$scriptName/g" $scriptNamePath
+# replace all {USER} with $USER
+sed -i "s/{USER}/$USER/g" $scriptNamePath
+
+# ##################################################
+# Set executable and launch the editor
+# ##################################################
+# set executable bit
+chmod a+x $scriptNamePath
+
+# Launch editor
+# ##################################################
+# unless noedit is set
+if [ ! "$noedit" == "1" ]; then
+    # Set up mseditArgs
+    # if editor is provided
+    if [ ! "$editor" == "" ]; then
+        # add that editor to mseditArgs
+        mseditArgs="--editor=$editor "
+    fi
+    mseditArgs=$mseditArgs$scriptNamePath
+
+    exec $mySupport/msedit $mseditArgs
+fi
