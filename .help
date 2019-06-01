@@ -1,0 +1,14 @@
+# ##################################################
+# -- help
+# ##################################################
+if [ "$1" == "--help" ]; then
+    shorthelp
+    # Write options and explanations
+    cat << EOF
+   --help                 Displays this text and exit.
+   --version              Displays the version of the script and exit.
+EOF
+    # Write information on arguments afterwards
+    # Write examples as required
+    exit 0
+fi 

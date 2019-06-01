@@ -1,0 +1,7 @@
+(c) {inityear} {USER}
+
+Option iteration section lifted from
+https://natelandau.com/boilerplate-shell-script-template
+EOF
+    exit 0
+fi

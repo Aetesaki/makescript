@@ -1,0 +1,212 @@
+#!/bin/bash
+# This script's framework was created using makescript 
+# version v0.15.0, dated 2019-04-11
+# Makescript and its accompanying scripts are copyrighted
+# by Aetesaki (c) 2018
+# 
+# msinstall (c) 2019 aetesaki
+#
+# ##################################################
+# HISTORY:
+# ##################################################
+#
+# * 2019-04-11 - v0.0.0  - First Creation
+# * 2019-06-01 - v0.0.1  - continue
+# * 2019-06-01 - v0.0.2  - continue
+# * 2019-06-01 - v1.0.0  - INITIAL RELEASE VERSION
+#
+# ##################################################
+# Initializing constants and variables
+# ##################################################
+# Setting constants
+version="v1.0.0"            # Sets version variable
+lastEdited="2019-06-01"     # Sets last edited variable
+# Declaring variables
+# Declare all variables to be used in the script 
+declare destination         # Where to install the framework
+declare sysop               # Super User permission required
+# ##################################################
+# short help function
+# ##################################################
+shorthelp() {
+    # Edit as required
+    cat << EOF
+Usage: msinstall [-au]
+       msinstall --help
+       msinstall --version"
+EOF
+}
+# ##################################################
+# no arguments gives short help
+# ##################################################
+if [ "$#" == "0" ]; then
+    shorthelp
+    exit 1
+fi 
+# ##################################################
+# -- help
+# ##################################################
+if [ "$1" == "--help" ]; then
+    shorthelp
+    # Write options and explanations
+    cat << EOF
+   --help                 Displays this text and exit.
+   --version              Displays the version of the script and exit.
+
+   -a, --all              Installs the makescript framework in
+                          /usr/local/bin
+                          OVERRIDDEN by the -u, --user option
+   -u, --user             Installs the makescript framework in
+                          $HOME/bin
+                          OVERRIDES the -a, --all option
+EOF
+    exit 0
+fi 
+# ##################################################
+# -- version
+# ##################################################
+if [ "$1" == "--version" ]; then
+    cat << EOF
+msinstall ${version}, dated ${lastEdited} 
+Part of the makescript suite by Aetesaki. PRE-RELEASE VERSION
+(c) 2019 aetesaki
+
+Option iteration section lifted from
+https://natelandau.com/boilerplate-shell-script-template
+EOF
+    exit 0
+fi
+# ##################################################
+# Options
+#
+# Iterate over options breaking -ab into -a -b when 
+# needed and --foo=bar into --foo bar. Lifted from 
+# https://natelandau.com/boilerplate-shell-script-template/
+# ##################################################
+optstring=h
+while (($#)); do
+  case $1 in
+    # If option is of type -ab
+    -[!-]?*)
+      # Loop over each character starting with the second
+      for ((i=1; i < ${#1}; i++)); do
+        c=${1:i:1}
+
+        # Add current char to options
+        options+=("-$c")
+
+        # If option takes a required argument, and it's not the last char make
+        # the rest of the string its argument
+        if [[ $optstring = *"$c:"* && ${1:i+1} ]]; then
+          options+=("+${1:i+1}")
+          break
+        fi
+      done
+      ;;
+
+    # If option is of type --foo=bar
+    --?*=*) options+=("${1%%=*}" "${1#*=}") ;;
+    # add --endopts for --
+    --) options+=(--endopts) ;;
+    # Otherwise, nothing special
+    *) options+=("$1") ;;
+  esac
+  shift
+done
+set -- "${options[@]}"
+unset options
+# Read the options and set stuff
+while [[ $1 = -?* ]]; do
+  case $1 in
+    # insert cases 
+    # use shift; to catch arguments in $1
+    -a|--all)  destination="/opt/makescript"; sysop=1 ;;
+    -u|--user) destination="$HOME/bin"; sysop=0 ;;
+    *) echo "ERROR: option $1 is not valid."; exit 1;; 
+  esac
+  shift
+done
+
+# ##################################################
+# Copy executable function
+# ##################################################
+# Copy file using sudo, depending on destination
+copyx() {
+    # Check if sudo required
+    if [ $sysop ]; then
+        # copy using sudo
+        sudo cp -ru $1 $2
+    else
+        # copy normally
+        cp -ru $1 $2
+    fi
+}
+
+
+# ##################################################
+# Copy function
+# ##################################################
+# Copies and set executable bit
+copy() {
+    echo "# Installing $1"
+    # Check if file exist at destination
+    if [ -f "$2"/"$1" ]; then
+        # if file exist update if older
+        echo "# - updating $1 at $2"
+    else
+        # else copy file to destination
+        echo "# - copying $1 to $2"
+    fi
+    # executing copy
+    copyx $1 $2
+}
+
+# ##################################################
+# Main section
+# ##################################################
+# Initial message
+cat << EOF
+##################################################
+# The makescript framework will be installed in
+# $destination
+# Support files will be installed in
+# $destination/.support
+# 
+EOF
+# Check if install directory does not exist
+if [ ! -d "$destination" ]; then
+    # if not check for sudo 
+    if [ $sysop ]; then
+        # create the directory using sudo
+        sudo mkdir -p $destination/.support
+    else
+        # create the directory
+        mkdir -p $destination/.support
+    fi
+fi
+copy makescript $destination
+copy editscript $destination
+copy .support/.empty $destination/.support
+copy .support/.header $destination/.support
+copy .support/.help $destination/.support
+copy .support/.main $destination/.support
+copy .support/.options $destination/.support
+copy .support/.shorthelp $destination/.support
+copy .support/.version $destination/.support
+copy .support/.version.noop $destination/.support
+copy .support/.version.op $destination/.support
+copy .support/msedit $destination/.support
+# if installing for all users
+if [ $sysop ]; then
+    # create links for makescript and editscript in /usr/local/bin
+    pushd /usr/local/bin > /dev/null
+    echo "# Creating links in /usr/local/bin"
+    sudo ln -s $destination/makescript
+    sudo ln -s $destination/editscript
+    popd > /dev/null
+fi
+cat << EOF
+#
+# The makescript framework has been installed
+##################################################
+EOF
