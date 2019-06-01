@@ -19,12 +19,13 @@
 # * 2019-04-11 - v1.1.0  - changing help text from echo to here document
 # * 2019-06-01 - v1.1.1  - correcting TERM test for other xterms
 # * 2019-06-01 - v1.1.2  - added pluma
+# * 2019-06-01 - v1.1.3  - reworking editor launcher
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.1.2"            # Sets version variable
+version="v1.1.3"            # Sets version variable
 lastEdited="2019-06-01"     # Sets last edited variable
 # Decleare variables
 # Declare all variables to be used in the script 
@@ -137,6 +138,20 @@ if [ "$args" == "" ]; then
 fi 
 
 # ##################################################
+# Search function section
+# ##################################################
+search () {
+	for arg in "$@"
+	do
+		which $arg > /dev/null
+		if [ "$?" == "0" ]; then
+			echo $arg
+			break
+		fi
+	done		
+}
+
+# ##################################################
 # Main section
 # ##################################################
 # Get the script and path from arguments
@@ -157,15 +172,11 @@ if [ ! "$editor" == "" ]; then
 else
     # if not checking terminal variable $TERM
     if [ "${TERM:0:5}" == "xterm" ]; then 
-        # if in an xterm terminal, launch pluma, gedit, kate, or xed
-        exec pluma $scriptNamePath 2>/dev/null &
-        exec gedit $scriptNamePath 2>/dev/null &
-        exec kate $scriptNamePath 2>/dev/null &
-        exec xed $scriptNamePath 2>/dev/null &
+		# search for X windows editor
+		# then launch the editor
+		exec $(search geany pluma gedit kate xed) $scriptNamePath 2>/dev/null &
     else
-        # if in an linux terminal, launch nano or vi
-        exec nano $scriptNamePath 2>/dev/null 
-        exec vim $scriptNamePath 2>/dev/null 
-        exec vi $scriptNamePath 2>/dev/null 
+		# search for pico, nano, and vi, and launch the first editor
+		exec $(search pico nano vi) $scriptNamePath 2>/dev/null 
     fi
 fi
