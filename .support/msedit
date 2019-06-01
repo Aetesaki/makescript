@@ -20,12 +20,13 @@
 # * 2019-06-01 - v1.1.1  - correcting TERM test for other xterms
 # * 2019-06-01 - v1.1.2  - added pluma
 # * 2019-06-01 - v1.1.3  - reworking editor launcher
+# * 2019-06-01 - v1.2.0  - Better editor lauch procedure
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.1.3"            # Sets version variable
+version="v1.2.0"            # Sets version variable
 lastEdited="2019-06-01"     # Sets last edited variable
 # Decleare variables
 # Declare all variables to be used in the script 
