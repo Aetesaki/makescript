@@ -2,6 +2,13 @@
 # no arguments gives short help
 # ##################################################
 if [ "$#" == "0" ]; then
-    shorthelp
-    exit 1
+	# check if $pipe is empty
+	if [ -z "$pipe" ]; then
+		# display shorthelp and exit
+		shorthelp
+		exit 1
+	else
+		# else set arguments to $pipe
+		set -- "$pipe"
+	fi
 fi 
