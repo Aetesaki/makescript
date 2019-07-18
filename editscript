@@ -27,12 +27,13 @@
 # * 2019-06-01 - v1.0.0  - Initial release
 # * 2019-06-01 - v1.0.1  - Adding parent option to mkdir
 # * 2019-07-18 - v1.0.2  - adding git support
+# * 2019-07-18 - v1.0.3  - adding a git commit script
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.2"            # Sets version variable
+version="v1.0.3"            # Sets version variable
 lastEdited="2019-07-18"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
@@ -46,13 +47,13 @@ declare scriptMajor scriptMinor scriptBuild
 declare scriptDate                    # lastEdited date in script
 declare editReason                    # Reason for edit
 declare backupVersion                 # Version without dots
-declare backupPath                    # Path to backup directory
-declare backupExt                     # Agregated backup extention of script
-declare destination                   # Full path and filename of backup
-declare myPath=$(dirname $0)                  # Full path of makescript
-declare mySupport                             # Full path to .support directory
-declare mseditArgs=""                         # Arguments for msedit
-declare Git=0									# Git support
+declare backupPath					# Path to backup directory
+declare backupExt					# Agregated backup extention of script
+declare destination					# Full path and filename of backup
+declare myPath=$(dirname $0)		# Full path of makescript
+declare mySupport					# Full path to .support directory
+declare mseditArgs=""				# Arguments for msedit
+declare Git=0						# Git support
 # Set mySupport path according to myPath
 # if myPath is /bin
 if [ $myPath == "/bin" ]; then
@@ -215,6 +216,14 @@ if [ -d $(pwd)/.git ]; then
 		Git=1
 		# and continue as if file is local
 		here=1
+		# create a gitcommit script
+		echo "#!/bin/bash -e" > ~/bin/gitcommit
+		echo "git add $scriptName" >> ~/bin/gitcommit
+		echo "git commit \"$editReason\"" >> ~/bin/gitcommit
+		echo "git push" >> ~/bin/gitcommit
+		chmod +x ~/bin/gitcommit
+		# alert the user
+		echo "run gitcommit after editing"
 	fi
 fi		
 		
