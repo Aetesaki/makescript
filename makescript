@@ -41,13 +41,15 @@
 # * 2018-11-18 - v0.14.9  - move main section to .support
 # * 2019-04-11 - v0.15.0  - changing help text from echo to here document
 # * 2019-06-01 - v1.0.0  - Initial release
+# * 2019-07-18 - v1.0.1  - adding git support and a git commit script
+# * 2019-07-18 - v1.0.2  - correcting command error in gitcommit script
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.0"            # Sets version variable
-lastEdited="2019-06-01"     # Sets last edited variable
+version="v1.0.2"            # Sets version variable
+lastEdited="2019-07-18"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
 declare editor empty force help here noedit   # option variables
@@ -58,6 +60,7 @@ declare inityear=$( date -I | cut -d"-" -f1 ) # script's initial year
 declare myPath=$(dirname $0)                  # Full path of makescript
 declare mySupport                             # Full path to .support directory
 declare mseditArgs=""                         # Arguments for msedit
+declare Git=0								# Git support
 # Set mySupport path according to myPath
 # if myPath is /bin
 if [ $myPath == "/bin" ]; then
@@ -91,7 +94,8 @@ if [ "$1" == "--help" ]; then
     shorthelp
 cat << EOF
 Creates a framework for a shell script and launches an editor.
-As default the script is created in \$HOME/bin.
+As default the script is created in \$HOME/bin, but if run in the root of a
+git repository the script will be created in the local directory.
 
    -a, --all              Adds a framework for help, options and empty
                           argument list.
@@ -120,7 +124,7 @@ fi
 if [ "$1" == "--version" ]; then
     cat << EOF
 makescript ${version}, dated ${lastEdited}
-Part of the makescript suite by Aetesaki. INITIAL RELEASE VERSION
+Part of the makescript suite by Aetesaki.
 (c) 2018 Aetesaki
  
 Option iteratation section lifted from
@@ -200,6 +204,22 @@ scriptName=$1
 
 # Set paths
 # ##################################################
+# If current directory contains a git repository
+if [ -d $(pwd)/.git ]; then
+	# then intergrate with Git
+	Git=1
+	# and continue as if file is local
+	here=1
+	# create a gitcommit script
+	echo "#!/bin/bash -e" > ~/bin/gitcommit
+	echo "git add $scriptName" >> ~/bin/gitcommit
+	echo "git commit -m \"First Creation\"" >> ~/bin/gitcommit
+	echo "git push" >> ~/bin/gitcommit
+	chmod +x ~/bin/gitcommit
+	# alert the user
+	echo "run gitcommit after editing"
+fi		
+
 # If filepath is included
 if [ "$path" == "1" ]; then
     # extract scriptPath from scriptName
