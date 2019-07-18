@@ -26,13 +26,14 @@
 # * 2019-04-11 - v0.6.1  - correcting error updating date in version list
 # * 2019-06-01 - v1.0.0  - Initial release
 # * 2019-06-01 - v1.0.1  - Adding parent option to mkdir
+# * 2019-07-18 - v1.0.2  - adding git support
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.1"            # Sets version variable
-lastEdited="2019-06-01"     # Sets last edited variable
+version="v1.0.2"            # Sets version variable
+lastEdited="2019-07-18"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
 declare editor minor major here path  # option varables
@@ -51,6 +52,7 @@ declare destination                   # Full path and filename of backup
 declare myPath=$(dirname $0)                  # Full path of makescript
 declare mySupport                             # Full path to .support directory
 declare mseditArgs=""                         # Arguments for msedit
+declare Git=0									# Git support
 # Set mySupport path according to myPath
 # if myPath is /bin
 if [ $myPath == "/bin" ]; then
@@ -86,18 +88,24 @@ if [ "$1" == "--help" ]; then
     cat << EOF
 Makes a backup of the script, increases version number, updates the script's
 history list, and launches an editor.
-If the script is in a bin directory, the backup will be made in the 
-subdirectory bak, which will be created if required.
+If the script is in a bin directory or in a git repository, the backup will 
+be made in the subdirectory bak, which will be created if required.
+To utilize the git integration, the script must be run from within the root
+directory of a git repository.
 
   -e, --editor=editor  Launch the file in selected editor.
                        Selected editor must be in \$PATH.
   -l, --local          Script is found in local directory.
                        If this is not set, editscript will assume script is 
                        found in \$HOME/bin.
-  -m, --minor          Increase minor version number,
+                       NOTE this option is ignored if the script is in a
+					   git repository.
+  -m, --minor          Increase minor version number.
       --noedit         Do not launch an editor
   -p, --path           script includes the path.
                        Overrides the -l, --local option.
+                       NOTE this option is ignored if the script is in a
+					   git repository.                    
   -v, --major          Increases major version number.
                        Overrides the -m, --minor option.
   --help               Displays this text and exit.
@@ -116,7 +124,7 @@ fi
 if [ "$1" == "--version" ]; then
     cat << EOF
 editscript ${version}, dated ${lastEdited}
-Part of the makescript suite by Aetesaki. INITIAL RELEASE VERSION
+Part of the makescript suite by Aetesaki. 
 (c) 2018 aetesaki
 
 Option iteratation section lifted from
@@ -199,6 +207,17 @@ editReason=$@
 
 # Set paths
 # ##################################################
+# If current directory contains a git repository
+if [ -d $(pwd)/.git ]; then
+	# then if scriptName is in current directory
+	if [ -f $(pwd)/$scriptName ]; then
+		# intergrate with Git
+		Git=1
+		# and continue as if file is local
+		here=1
+	fi
+fi		
+		
 # If filepath is included
 if [ "$path" == "1" ]; then
     # extract scriptPath from scriptName
@@ -217,8 +236,8 @@ else
 fi
 # set up backupPath
 backupPath=$scriptPath
-# check if backupPath is a bin directory
-if [ $(basename "$backupPath") == "bin" ]; then
+# if backupPath is a bin directory or if we're integrated with Git
+if [ $(basename "$backupPath") == "bin" -o "$Git" == "1" ]; then
     # add /bak to backupPath
     backupPath+=/bak
     # and create backup directory if it doesn't exist
@@ -228,7 +247,6 @@ if [ $(basename "$backupPath") == "bin" ]; then
 fi
 # Set the full path name
 scriptNamePath=$scriptPath/$scriptName
-
 # Check if editscript can work with the script
 # ##################################################
 # pull the makescript intro from the script
