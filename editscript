@@ -28,12 +28,13 @@
 # * 2019-06-01 - v1.0.1  - Adding parent option to mkdir
 # * 2019-07-18 - v1.0.2  - adding git support
 # * 2019-07-18 - v1.0.3  - adding a git commit script
+# * 2019-07-18 - v1.0.4  - correcting command error in gitcommit script
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.3"            # Sets version variable
+version="v1.0.4"            # Sets version variable
 lastEdited="2019-07-18"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
@@ -219,7 +220,7 @@ if [ -d $(pwd)/.git ]; then
 		# create a gitcommit script
 		echo "#!/bin/bash -e" > ~/bin/gitcommit
 		echo "git add $scriptName" >> ~/bin/gitcommit
-		echo "git commit \"$editReason\"" >> ~/bin/gitcommit
+		echo "git commit -m \"$editReason\"" >> ~/bin/gitcommit
 		echo "git push" >> ~/bin/gitcommit
 		chmod +x ~/bin/gitcommit
 		# alert the user
