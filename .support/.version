@@ -1,6 +1,8 @@
 # ##################################################
 # -- version
 # ##################################################
+# if the first argument is --version
 if [ "$1" == "--version" ]; then
+	# display the version text
     cat << EOF
 {scriptName} ${version}, dated ${lastEdited}
