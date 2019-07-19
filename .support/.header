@@ -15,7 +15,7 @@
 # ##################################################
 # Setting constants
 version="v0.0.0"            # Sets version variable
-lastEdited="{initdate}"     # Sets last edited variable" $scriptNamePath
+lastEdited="{initdate}"     # Sets last edited variable
 [ ! -t 0 ] && pipe=$(cat)   # if stdin is open dump stdin to $pipe
 # Declaring variables
 # Declare all variables to be used in the script 
