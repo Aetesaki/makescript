@@ -1,6 +1,7 @@
 # ##################################################
 # -- help
 # ##################################################
+# if the first argument is --help
 if [ "$1" == "--help" ]; then
     shorthelp
     # Write options and explanations
