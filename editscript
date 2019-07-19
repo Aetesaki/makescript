@@ -29,13 +29,14 @@
 # * 2019-07-18 - v1.0.2  - adding git support
 # * 2019-07-18 - v1.0.3  - adding a git commit script
 # * 2019-07-18 - v1.0.4  - correcting command error in gitcommit script
+# * 2019-07-19 - v1.0.5  - adding more comment
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.4"            # Sets version variable
-lastEdited="2019-07-18"     # Sets last edited variable
+version="v1.0.5"            # Sets version variable
+lastEdited="2019-07-19"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
 declare editor minor major here path  # option varables
@@ -194,7 +195,7 @@ args+=("$@")
 # If there are arguments left
 if [ "$args" == "" ]; then
     # display an error
-    echo "ERROR: No arguments..."
+    echo "ERROR: No arguments..." >&2
     # and exit
     exit 1
 fi 
@@ -218,10 +219,15 @@ if [ -d $(pwd)/.git ]; then
 		# and continue as if file is local
 		here=1
 		# create a gitcommit script
+		# make it a bash script that exits on errors
 		echo "#!/bin/bash -e" > ~/bin/gitcommit
+		# add the edited script to the repository
 		echo "git add $scriptName" >> ~/bin/gitcommit
+		# commit the changes using $editReason as the message
 		echo "git commit -m \"$editReason\"" >> ~/bin/gitcommit
+		# and push it to the remote server
 		echo "git push" >> ~/bin/gitcommit
+		# make the script executional
 		chmod +x ~/bin/gitcommit
 		# alert the user
 		echo "run gitcommit after editing"
@@ -250,8 +256,9 @@ backupPath=$scriptPath
 if [ $(basename "$backupPath") == "bin" -o "$Git" == "1" ]; then
     # add /bak to backupPath
     backupPath+=/bak
-    # and create backup directory if it doesn't exist
+    # if the backup directory isn't a directory
     if [ ! -d $backupPath ]; then
+		# make the directory and its parents
         mkdir -p $backupPath
     fi
 fi
@@ -259,13 +266,16 @@ fi
 scriptNamePath=$scriptPath/$scriptName
 # Check if editscript can work with the script
 # ##################################################
-# pull the makescript intro from the script
+# pull the makescript intro from the script 
+# list the script, get all lines containing makescript, including their 
+# linenumber, choose the first, and store the linenumber which contain the
+# first mention of makescript in $x
 x=$( cat $scriptNamePath | grep -ni makescript | head -n1 | cut -d":" -f1 )
-# check if the intro is in line 2
+# if the linenumber stored in $x is not 2
 if [ ! "$x" == "2" ]; then
-    # if not, display an error message
+    # then display an error message
     echo "ERROR: editscript cannot work with this script.
-editscript can only work with makescript scripts."
+editscript can only work with makescript scripts." >&2
     # and exit
     exit 1
 fi
@@ -273,12 +283,17 @@ fi
 # Pull all version data from script
 # ##################################################
 # pull scriptVersion from the script
+# list the script, get all lines containing version=, choose the first,
+# and store the content of the constant in $scriptVersion
 scriptVersion=$( cat $scriptNamePath | grep -i version= | head -n1 | cut -d"\"" -f2 )
 # split the version data into major, minor, and build
+# echo $scriptversion, and get the correct part, and store it
 scriptMajor=$( echo ${scriptVersion//v} | cut -d"." -f1 )
 scriptMinor=$( echo ${scriptVersion//v} | cut -d"." -f2 )
 scriptBuild=$( echo ${scriptVersion//v} | cut -d"." -f3 )
 # pull scriptDate from the script
+# list the script, get all lines containing lastEdited=, choose the first,
+# ans store the content of the constant in $scriptDate
 scriptDate=$( cat $scriptNamePath | grep -i lastEdited= | head -n1 | cut -d"\"" -f2 )
 
 # Backup the script
@@ -302,14 +317,14 @@ if [ "$major" == "1" ]; then
     scriptMinor=0
     scriptBuild=0
 else
-    # if major not set, then if minor edit
+    # else if minor edit
     if [ "$minor" == "1" ]; then
         # increase minor
         scriptMinor=$( expr $scriptMinor + 1 )
         # and reset build
         scriptBuild=0
     else
-        # just increase build
+        # else just increase build
         scriptBuild=$( expr $scriptBuild + 1 )
     fi
 fi
@@ -325,7 +340,10 @@ if [ ! $scriptDate == $(date -I) ]; then
     # set up new lastEdited line
     x="lastEdited=\"${scriptDate}\"     # Sets last edited variable"
     # locate the lastEdited line
-    i=$( cat $scriptNamePath | grep -ni lastEdited= | head -n1 | cut -d":" -f1 )
+	# list the script, get all lines containing lastEdited=, including their  
+	# linenumber, choose the first, and store the linenumber which contain the 
+	# first mention of lastEdited= in $i
+	i=$( cat $scriptNamePath | grep -ni lastEdited= | head -n1 | cut -d":" -f1 )
     # delete the existing line
     sed -i "${i}d" $scriptNamePath
     # and insert the new line
@@ -335,14 +353,17 @@ fi
 # Insert new version number in History list
 # ##################################################
 # locate line number for end of History list
+# list the script, get all lines containing initializing, including their linenumbers,
+# choose the first, subtract 2 from the linenumber, and store it in $i
 i=$( expr $( cat $scriptNamePath | grep -ni initializing | head -n1 | cut -d":" -f1 ) - 2 )
 # set up new History record
 x="# * ${scriptDate} - ${scriptVersion}  - "
-# and insert reason if supplied
+# and if $editReason is not empty
 if [ ! "$editReason" == "" ]; then
+	# append $editReason to the end of the line
     x+=$editReason
 fi
-# finally issue sed command
+# Insert the line at the linenumber previously stored in $i
 sed -i "${i}i${x}" $scriptNamePath
 
 # Replace file's version number with new version number
@@ -350,23 +371,27 @@ sed -i "${i}i${x}" $scriptNamePath
 # set up new version line
 x="version=\"${scriptVersion}\"            # Sets version variable"
 # locate the version line
+# list the script, get all lines containing version=, including their linenumbers,
+# choose the first, and store the linenumber in $i
 i=$( cat $scriptNamePath | grep -ni version= | head -n1 | cut -d":" -f1 )
-# delete the existing line
+# delete the existing line at the linenumber previously stored in $i
 sed -i "${i}d" $scriptNamePath
-# and insert the new line
+# Insert the line at the linenumber previously stored in $i
 sed -i "${i}i${x}" $scriptNamePath
 
 # Launch editor
 # ##################################################
-# unless noedit is set
+# If noedit is not 1
 if [ ! "$noedit" == "1" ]; then
     # Set up mseditArgs
-    # if editor is provided
+    # if editor is not empty
     if [ ! "$editor" == "" ]; then
         # add that editor to mseditArgs
         mseditArgs="--editor=$editor "
     fi
+    # set up the arguments
     mseditArgs=$mseditArgs$scriptNamePath
 
+	# execute msedit
     exec $mySupport/msedit $mseditArgs
 fi
