@@ -42,7 +42,7 @@ while [[ $1 = -?* ]]; do
   case $1 in
     # insert cases 
     # use shift; to catch arguments in $1
-    *) echo "ERROR: option $1 is not valid."; exit 1;; 
+    *) echo "ERROR: option $1 is not valid." >&2; exit 1;; 
   esac
   shift
 done
@@ -51,7 +51,7 @@ unset args
 args+=("$@")
 # No arguments gives error
 if [ "$args" == "" ]; then
-    echo "ERROR: No arguments..."
+    echo "ERROR: No arguments..." >&2
     exit 1
 fi 
 
