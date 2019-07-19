@@ -22,13 +22,14 @@
 # * 2019-06-01 - v1.1.3  - reworking editor launcher
 # * 2019-06-01 - v1.2.0  - Better editor lauch procedure
 # * 2019-06-01 - v1.2.1  - Added leafpad and mousepad
+# * 2019-07-19 - v1.2.2  - adding comments
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.2.1"            # Sets version variable
-lastEdited="2019-06-01"     # Sets last edited variable
+version="v1.2.2"            # Sets version variable
+lastEdited="2019-07-19"     # Sets last edited variable
 # Decleare variables
 # Declare all variables to be used in the script 
 declare editor                # option variable
@@ -143,11 +144,16 @@ fi
 # Search function section
 # ##################################################
 search () {
+	# for each argument provided
 	for arg in "$@"
 	do
+		# locate argument and discard the result
 		which $arg > /dev/null
+		# if the command exited without errors
 		if [ "$?" == "0" ]; then
+			# return that argument
 			echo $arg
+			# and end the function
 			break
 		fi
 	done		
@@ -160,24 +166,27 @@ search () {
 scriptNamePath=$1
 # Launch an editor depending on current environment
 # ##################################################
-# if editor is provided
+# if $editor is not empty
 if [ ! "$editor" == "" ]; then
     # execute that editor
-    # if editor is nano or pico
+    # if $editor is nano or pico
     if [ "$editor" == "nano" -o "$editor" == "pico" ]; then
-        # hog the prompt
-        exec nano $scriptNamePath
+        # execute the editor loading the provided script
+        exec $editor $scriptNamePath
     else
-        # don't hog the prompt
+        # execute the script in the background, loading the provided script
         exec $editor $scriptNamePath &
     fi
 else
-    # if not checking terminal variable $TERM
+    # else if the first 5 letters of the environmental variable $TERM
+    # is xterm
     if [ "${TERM:0:5}" == "xterm" ]; then 
-		# search for X windows editor and launch the first available editor
+		# search for a first available X windows editor, launch that editor in the
+		# background, loading the provided script, disregarding any errors
 		exec $(search geany pluma gedit kate leafpad mousepad xed) $scriptNamePath 2>/dev/null &
     else
-		# search for pico, nano, vim and vi, and launch the first available editor
+		# search for pico, nano, vim and vi, and launch the first available editor,
+		# loading the provided script, disregarding any errors
 		exec $(search pico nano vim vi) $scriptNamePath 2>/dev/null 
     fi
 fi
