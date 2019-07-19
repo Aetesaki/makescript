@@ -43,13 +43,14 @@
 # * 2019-06-01 - v1.0.0  - Initial release
 # * 2019-07-18 - v1.0.1  - adding git support and a git commit script
 # * 2019-07-18 - v1.0.2  - correcting command error in gitcommit script
+# * 2019-07-19 - v1.0.3  - adding more comments
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.2"            # Sets version variable
-lastEdited="2019-07-18"     # Sets last edited variable
+version="v1.0.3"            # Sets version variable
+lastEdited="2019-07-19"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
 declare editor empty force help here noedit   # option variables
@@ -192,7 +193,7 @@ unset args
 args+=("$@")
 # No arguments gives error
 if [ "$args" == "" ]; then
-    echo "ERROR: No script name provided..."
+    echo "ERROR: No script name provided..." >&2
     exit 1
 fi 
 
@@ -211,10 +212,15 @@ if [ -d $(pwd)/.git ]; then
 	# and continue as if file is local
 	here=1
 	# create a gitcommit script
+	# make it a bash script that exits on errors
 	echo "#!/bin/bash -e" > ~/bin/gitcommit
+	# add the new script to the repository
 	echo "git add $scriptName" >> ~/bin/gitcommit
+	# commit the changes using "First Creation" as the message
 	echo "git commit -m \"First Creation\"" >> ~/bin/gitcommit
+	# and push it to the remote server
 	echo "git push" >> ~/bin/gitcommit
+	# make the script executional
 	chmod +x ~/bin/gitcommit
 	# alert the user
 	echo "run gitcommit after editing"
@@ -236,8 +242,9 @@ else
         scriptPath=$HOME/bin
     fi
 fi
-# create directory if not found
+# if $scriptPath is not a directory
 if [ ! -d $scriptPath ]; then
+	# make the directory and its parents
     mkdir -p $scriptPath
 fi
 # set full path
@@ -250,20 +257,20 @@ scriptNamePath=$scriptPath/$scriptName
 if [ "$shell" == "" ]; then
     # set shebang to bash
     echo "#!/bin/bash" > $scriptNamePath
-# if shell is selected and it exists or is forced
+# else if shell is selected and it exists or is forced
 elif [[ -x /bin/${shell} || "$force" == "1" ]]; then
     # set shebang to selected shell
     echo "#!/bin/${shell}" > $scriptNamePath
 else
-    # display an error message
-    echo "ERROR: Selected shell is not available"
+    # else display an error message
+    echo "ERROR: Selected shell is not available" >&2
     # and exit
     exit 1    
 fi
 
 # append header section from file
 cat $mySupport/.header >> $scriptNamePath
-# insert makescript version
+# insert makescript version at the 3rd line
 sed -i "3i# version ${version}, dated ${lastEdited}" $scriptNamePath
 
 # Short help function
@@ -273,7 +280,7 @@ if [[ "$empty" == "1" || "$help" == "1" ]]; then
     cat $mySupport/.shorthelp >> $scriptNamePath
     # if help option is not set
     if [[ ! "$help" == "1" ]]; then
-        # delete script's help opion from short help
+        # delete script's help opion from short help at line 29
         sed -i '29d' $scriptNamePath
     fi
 fi
@@ -300,8 +307,10 @@ fi
 cat $mySupport/.version >> $scriptNamePath
 # if options option is set
 if [ "$options" == "1" ]; then
+	# append the version with option section note from file
     cat $mySupport/.version.op >> $scriptNamePath
 else
+	# else append the version with no option section note from file
     cat $mySupport/.version.noop >> $scriptNamePath
 fi 
 
@@ -345,7 +354,9 @@ if [ ! "$noedit" == "1" ]; then
         # add that editor to mseditArgs
         mseditArgs="--editor=$editor "
     fi
+    # set up the argument list for msedit
     mseditArgs=$mseditArgs$scriptNamePath
 
+	# execute msedit
     exec $mySupport/msedit $mseditArgs
 fi
