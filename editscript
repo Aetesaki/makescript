@@ -30,12 +30,13 @@
 # * 2019-07-18 - v1.0.3  - adding a git commit script
 # * 2019-07-18 - v1.0.4  - correcting command error in gitcommit script
 # * 2019-07-19 - v1.0.5  - adding more comment
+# * 2019-07-19 - v1.0.6  - correcting backup error when working with git subdirectories
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.5"            # Sets version variable
+version="v1.0.6"            # Sets version variable
 lastEdited="2019-07-19"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
@@ -212,7 +213,7 @@ editReason=$@
 # ##################################################
 # If current directory contains a git repository
 if [ -d $(pwd)/.git ]; then
-	# then if scriptName is in current directory
+	# if scriptName is in current directory or a subdirectory
 	if [ -f $(pwd)/$scriptName ]; then
 		# intergrate with Git
 		Git=1
@@ -304,8 +305,8 @@ backupVersion=${scriptVersion//.}
 backupExt=$scriptDate.$backupVersion
 # Set the backup destination
 destination=$backupPath/$scriptName.$backupExt
-# Make a backup of the script
-cp -b $scriptNamePath $destination
+# Make a backup of the script including any subdirectories
+cp -br $scriptNamePath $destination
 
 # Increase version number as requested (increases build as default)
 # ##################################################
