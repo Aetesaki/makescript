@@ -1,8 +1,9 @@
 # ##################################################
 # no arguments gives short help
 # ##################################################
+# if number of arguments is 0
 if [ "$#" == "0" ]; then
-	# check if $pipe is empty
+	# if length of $pipe is 0
 	if [ -z "$pipe" ]; then
 		# display shorthelp and exit
 		shorthelp
