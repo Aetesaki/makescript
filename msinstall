@@ -14,24 +14,26 @@
 # * 2019-06-01 - v0.0.1  - continue
 # * 2019-06-01 - v0.0.2  - continue
 # * 2019-06-01 - v1.0.0  - INITIAL RELEASE VERSION
+# * 2019-07-22 - v1.0.1  - git integration
 #
 # ##################################################
 # Initializing constants and variables
 # ##################################################
 # Setting constants
-version="v1.0.0"            # Sets version variable
-lastEdited="2019-06-01"     # Sets last edited variable
+version="v1.0.1"            # Sets version variable
+lastEdited="2019-07-22"     # Sets last edited variable
 # Declaring variables
 # Declare all variables to be used in the script 
 declare destination         # Where to install the framework
 declare sysop               # Super User permission required
+declare git=0               # git integration
 # ##################################################
 # short help function
 # ##################################################
 shorthelp() {
     # Edit as required
     cat << EOF
-Usage: msinstall [-au]
+Usage: msinstall [-a|-u|-g]
        msinstall --help
        msinstall --version"
 EOF
@@ -55,10 +57,16 @@ if [ "$1" == "--help" ]; then
 
    -a, --all              Installs the makescript framework in
                           /usr/local/bin
-                          OVERRIDDEN by the -u, --user option
+   -g, --git              Installs the makescript framework as links
+                          to your local git repository. The links will
+                          be placed in $HOME/bin.
+                          NOTE: Do NOT delete the repository afterwards.
    -u, --user             Installs the makescript framework in
                           $HOME/bin
-                          OVERRIDES the -a, --all option
+                         
+   NOTE: -a will be overriden by -g and -u
+         -g will override -a and -u
+         -u will override -a, but be overriden by -g
 EOF
     exit 0
 fi 
@@ -68,7 +76,7 @@ fi
 if [ "$1" == "--version" ]; then
     cat << EOF
 msinstall ${version}, dated ${lastEdited} 
-Part of the makescript suite by Aetesaki. PRE-RELEASE VERSION
+Part of the makescript suite by Aetesaki.
 (c) 2019 aetesaki
 
 Option iteration section lifted from
@@ -121,6 +129,7 @@ while [[ $1 = -?* ]]; do
     # insert cases 
     # use shift; to catch arguments in $1
     -a|--all)  destination="/opt/makescript"; sysop=1 ;;
+    -g|--git)  git=1;;
     -u|--user) destination="$HOME/bin"; sysop=0 ;;
     *) echo "ERROR: option $1 is not valid."; exit 1;; 
   esac
@@ -164,49 +173,71 @@ copy() {
 # ##################################################
 # Main section
 # ##################################################
-# Initial message
-cat << EOF
-##################################################
-# The makescript framework will be installed in
-# $destination
-# Support files will be installed in
-# $destination/.support
-# 
-EOF
-# Check if install directory does not exist
-if [ ! -d "$destination" ]; then
-    # if not check for sudo 
-    if [ $sysop ]; then
-        # create the directory using sudo
-        sudo mkdir -p $destination/.support
-    else
-        # create the directory
-        mkdir -p $destination/.support
-    fi
+# if $git is 0
+if [ "$git" == "0" ]; then
+	# Initial message
+	cat <<- EOF
+		##################################################
+		# The makescript framework will be installed in
+		# $destination
+		# Support files will be installed in
+		# $destination/.support
+		# 
+	EOF
+	# Check if install directory does not exist
+	if [ ! -d "$destination" ]; then
+		# if not check for sudo 
+		if [ $sysop ]; then
+			# create the directory using sudo
+			sudo mkdir -p $destination/.support
+		else
+			# create the directory
+			mkdir -p $destination/.support
+		fi
+	fi
+	copy makescript $destination
+	copy editscript $destination
+	copy .support/.empty $destination/.support
+	copy .support/.header $destination/.support
+	copy .support/.help $destination/.support
+	copy .support/.main $destination/.support
+	copy .support/.options $destination/.support
+	copy .support/.shorthelp $destination/.support
+	copy .support/.version $destination/.support
+	copy .support/.version.noop $destination/.support
+	copy .support/.version.op $destination/.support
+	copy .support/msedit $destination/.support
+	# if installing for all users
+	if [ $sysop ]; then
+		# create links for makescript and editscript in /usr/local/bin
+		pushd /usr/local/bin > /dev/null
+		echo "# Creating links in /usr/local/bin"
+		sudo ln -s $destination/makescript
+		sudo ln -s $destination/editscript
+		popd > /dev/null
+	fi
+else
+	# if $HOME/bin is not a directory
+	if [ ! -d "$HOME/bin" ]; then
+		# create it
+		mkdir $HOME/bin
+	fi
+	# Initial message
+	cat <<- EOF
+		##################################################
+		# The makescript framework will be linked to from
+		# $HOME/bin
+		# All files will stay in the local repository
+		# 
+	EOF
+	pushd $HOME/bin
+	ln -s $(dirname $0)/makescript .
+	ln -s $(dirname $0)/editscript .
+	echo "# Do NOT delete the repository"
 fi
-copy makescript $destination
-copy editscript $destination
-copy .support/.empty $destination/.support
-copy .support/.header $destination/.support
-copy .support/.help $destination/.support
-copy .support/.main $destination/.support
-copy .support/.options $destination/.support
-copy .support/.shorthelp $destination/.support
-copy .support/.version $destination/.support
-copy .support/.version.noop $destination/.support
-copy .support/.version.op $destination/.support
-copy .support/msedit $destination/.support
-# if installing for all users
-if [ $sysop ]; then
-    # create links for makescript and editscript in /usr/local/bin
-    pushd /usr/local/bin > /dev/null
-    echo "# Creating links in /usr/local/bin"
-    sudo ln -s $destination/makescript
-    sudo ln -s $destination/editscript
-    popd > /dev/null
-fi
-cat << EOF
-#
-# The makescript framework has been installed
-##################################################
+# Final message	
+cat <<- EOF
+	#
+	# The makescript framework has been installed
+	##################################################
 EOF
